@@ -108,6 +108,19 @@ func (tc *Client) GetAccountPositions() ([]*Position, error) {
 	return result.Positions.Position, err
 }
 
+func (tc *Client) GetAccountPositionsRaw() ([]byte, error) {
+	if tc.account == "" {
+		return nil, ErrNoAccountSelected
+	}
+
+	url := tc.endpoint + "/v1/accounts/" + tc.account + "/positions"
+	result, err := tc.getAPIRaw(url)
+	if err != nil {
+		return nil, err
+	}
+	return result, err
+}
+
 func (tc *Client) GetAccountHistory(limit int) ([]*Event, error) {
 	if tc.account == "" {
 		return nil, ErrNoAccountSelected
@@ -785,6 +798,21 @@ func (tc *Client) getJSON(url string, result interface{}) error {
 
 	dec := json.NewDecoder(resp.Body)
 	return dec.Decode(result)
+}
+
+func (tc *Client) getAPIRaw(url string) ([]byte, error)  {
+	resp, err := tc.do("GET", url, nil, tc.retryLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, errors.New(resp.Status + ": " + string(body))
+	} 
+
+	result, _ := ioutil.ReadAll(resp.Body)
+	return result, nil
 }
 
 func (tc *Client) GetQuotes(symbols []string) ([]*Quote, error) {
