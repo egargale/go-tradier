@@ -92,6 +92,18 @@ func (tc *Client) GetAccountBalances() (*AccountBalances, error) {
 	err := tc.getJSON(url, &result)
 	return result.Balances, err
 }
+func (tc *Client) GetAccountBalancesRaw() ([]byte, error) {
+	if tc.account == "" {
+		return nil, ErrNoAccountSelected
+	}
+
+	url := tc.endpoint + "/v1/accounts/" + tc.account + "/balances"
+	result, err := tc.getAPIRaw(url)
+	if err != nil {
+		return nil, err
+	}
+	return result, err
+}
 
 func (tc *Client) GetAccountPositions() ([]*Position, error) {
 	if tc.account == "" {
@@ -138,6 +150,21 @@ func (tc *Client) GetAccountHistory(limit int) ([]*Event, error) {
 	err := tc.getJSON(url, &result)
 	return result.History.Event, err
 }
+func (tc *Client) GetAccountHistoryRaw(limit int) ([]byte, error) {
+	if tc.account == "" {
+		return nil, ErrNoAccountSelected
+	}
+
+	url := tc.endpoint + "/v1/accounts/" + tc.account + "/history"
+	if limit > 0 {
+		url += fmt.Sprintf("?limit=%d", limit)
+	}
+	result, err := tc.getAPIRaw(url)
+	if err != nil {
+		return nil, err
+	}
+	return result, err
+}
 
 func (tc *Client) GetAccountCostBasis() ([]*ClosedPosition, error) {
 	if tc.account == "" {
@@ -152,6 +179,18 @@ func (tc *Client) GetAccountCostBasis() ([]*ClosedPosition, error) {
 	}
 	err := tc.getJSON(url, &result)
 	return result.GainLoss.ClosedPosition, err
+}
+func (tc *Client) GetAccountCostBasisRaw() ([]byte, error) {
+	if tc.account == "" {
+		return nil, ErrNoAccountSelected
+	}
+
+	url := tc.endpoint + "/v1/accounts/" + tc.account + "/gainloss"
+	result, err := tc.getAPIRaw(url)
+	if err != nil {
+		return nil, err
+	}
+	return result, err
 }
 
 func (tc *Client) GetOpenOrders() ([]*Order, error) {
@@ -800,7 +839,7 @@ func (tc *Client) getJSON(url string, result interface{}) error {
 	return dec.Decode(result)
 }
 
-func (tc *Client) getAPIRaw(url string) ([]byte, error)  {
+func (tc *Client) getAPIRaw(url string) ([]byte, error) {
 	resp, err := tc.do("GET", url, nil, tc.retryLimit)
 	if err != nil {
 		return nil, err
@@ -809,7 +848,7 @@ func (tc *Client) getAPIRaw(url string) ([]byte, error)  {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return nil, errors.New(resp.Status + ": " + string(body))
-	} 
+	}
 
 	result, _ := ioutil.ReadAll(resp.Body)
 	return result, nil
